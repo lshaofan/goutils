@@ -15,14 +15,28 @@ func Assign(sourceStruct interface{}, targetStruct interface{}) error {
 	sourceValue := reflect.ValueOf(sourceStruct)
 	targetValue := reflect.ValueOf(targetStruct)
 	// 判断sourceStruct是否是结构体类型，如果不是，返回错误  targetStruct是指针类型的结构体
-	if sourceValue.Kind() != reflect.Struct || targetValue.Kind() != reflect.Ptr || targetValue.Elem().Kind() != reflect.Struct {
+	if func() bool {
+		if sourceValue.Kind() == reflect.Struct {
+			return false
+		} else if sourceValue.Kind() == reflect.Ptr {
+			return sourceValue.Elem().Kind() != reflect.Struct
+		} else {
+			return true
+		}
+
+	}() || targetValue.Kind() != reflect.Ptr || targetValue.Elem().Kind() != reflect.Struct {
 		return errors.New("sourceStruct必须是结构体类型，targetStruct必须是结构体指针类型")
 	}
 	// 获取第二个结构体的 reflect.Value 类型
 	targetValue = targetValue.Elem()
 
-	// 获取第一个结构体的类型
+	// 获取sourceStruct 类型
 	sourceType := reflect.TypeOf(sourceStruct)
+	// 判断sourceStruct是否是指针类型的结构体，如果是，获取其指向的结构体的类型
+	if sourceValue.Kind() == reflect.Ptr {
+		sourceValue = sourceValue.Elem()
+		sourceType = sourceType.Elem()
+	}
 
 	// 遍历第一个结构体的所有字段
 	for i := 0; i < sourceType.NumField(); i++ {
